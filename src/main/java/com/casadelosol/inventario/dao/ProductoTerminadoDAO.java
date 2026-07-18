@@ -40,6 +40,19 @@ public class ProductoTerminadoDAO {
         return null;
     }
 
+    ProductoTerminado findById(int id, Connection conn) throws SQLException {
+        String sql = "SELECT id, nombre, precio_venta, stock_actual, categoria_id FROM producto_terminado WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
+            }
+        }
+        return null;
+    }
+
     public List<ProductoTerminado> findByCategoria(int categoriaId) {
         List<ProductoTerminado> list = new ArrayList<>();
         String sql = "SELECT id, nombre, precio_venta, stock_actual, categoria_id FROM producto_terminado WHERE categoria_id = ? ORDER BY nombre";
@@ -119,6 +132,15 @@ public class ProductoTerminadoDAO {
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Error al actualizar stock de producto terminado", e);
+        }
+    }
+
+    void updateStock(int id, double nuevoStock, Connection conn) throws SQLException {
+        String sql = "UPDATE producto_terminado SET stock_actual = ? WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setDouble(1, nuevoStock);
+            stmt.setInt(2, id);
+            stmt.executeUpdate();
         }
     }
 

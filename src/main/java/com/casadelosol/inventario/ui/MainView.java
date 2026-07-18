@@ -11,42 +11,40 @@ import javafx.scene.layout.VBox;
 
 public class MainView extends BorderPane {
 
-    private final VBox sidebar;
-    private final BorderPane contentArea;
-    private final ToggleGroup menuGroup;
+    private final Node stockNode;
+    private final Node categoriaMPNode;
+    private final Node materiaPrimaNode;
+    private final Node categoriaPTNode;
+    private final Node productoTerminadoNode;
+    private final Node compraNode;
+    private final Node recetaNode;
+    private final Node produccionNode;
+    private final Node ventaNode;
+    private final Node reportesNode;
 
-    private final StockView stockView;
-    private final CategoriaMPView categoriaMPView;
-    private final MateriaPrimaView materiaPrimaView;
-    private final CategoriaPTView categoriaPTView;
-    private final ProductoTerminadoView productoTerminadoView;
-    private final CompraView compraView;
-    private final RecetaView recetaView;
-    private final ProduccionView produccionView;
-    private final VentaView ventaView;
-    private final ReportesView reportesView;
+    private final ToggleGroup menuGroup;
+    private final BorderPane contentArea;
 
     public MainView() {
-        stockView = new StockView();
-        categoriaMPView = new CategoriaMPView();
-        materiaPrimaView = new MateriaPrimaView();
-        categoriaPTView = new CategoriaPTView();
-        productoTerminadoView = new ProductoTerminadoView();
-        compraView = new CompraView();
-        recetaView = new RecetaView();
-        produccionView = new ProduccionView();
-        ventaView = new VentaView();
-        reportesView = new ReportesView();
+        stockNode = new StockView().getView();
+        categoriaMPNode = new CategoriaMPView().getView();
+        materiaPrimaNode = new MateriaPrimaView().getView();
+        categoriaPTNode = new CategoriaPTView().getView();
+        productoTerminadoNode = new ProductoTerminadoView().getView();
+        compraNode = new CompraView().getView();
+        recetaNode = new RecetaView().getView();
+        produccionNode = new ProduccionView().getView();
+        ventaNode = new VentaView().getView();
+        reportesNode = new ReportesView().getView();
 
         menuGroup = new ToggleGroup();
-
-        sidebar = createSidebar();
         contentArea = createContentArea();
+        VBox sidebar = createSidebar();
 
         setLeft(sidebar);
         setCenter(contentArea);
 
-        showView(stockView.getView());
+        showNode(stockNode);
     }
 
     private VBox createSidebar() {
@@ -58,19 +56,19 @@ public class MainView extends BorderPane {
         title.getStyleClass().add("sidebar-title");
 
         box.getChildren().add(title);
-        box.getChildren().add(createMenuButton("Stock General", stockView.getView()));
+        box.getChildren().add(createMenuButton("Stock General", stockNode));
         box.getChildren().add(createSectionLabel("Materias Primas"));
-        box.getChildren().add(createMenuButton("Categorías", categoriaMPView.getView()));
-        box.getChildren().add(createMenuButton("Materias Primas", materiaPrimaView.getView()));
-        box.getChildren().add(createMenuButton("Compras", compraView.getView()));
+        box.getChildren().add(createMenuButton("Categorías", categoriaMPNode));
+        box.getChildren().add(createMenuButton("Materias Primas", materiaPrimaNode));
+        box.getChildren().add(createMenuButton("Compras", compraNode));
         box.getChildren().add(createSectionLabel("Productos"));
-        box.getChildren().add(createMenuButton("Categorías", categoriaPTView.getView()));
-        box.getChildren().add(createMenuButton("Productos", productoTerminadoView.getView()));
-        box.getChildren().add(createMenuButton("Recetas", recetaView.getView()));
-        box.getChildren().add(createMenuButton("Producción", produccionView.getView()));
-        box.getChildren().add(createMenuButton("Ventas", ventaView.getView()));
+        box.getChildren().add(createMenuButton("Categorías", categoriaPTNode));
+        box.getChildren().add(createMenuButton("Productos", productoTerminadoNode));
+        box.getChildren().add(createMenuButton("Recetas", recetaNode));
+        box.getChildren().add(createMenuButton("Producción", produccionNode));
+        box.getChildren().add(createMenuButton("Ventas", ventaNode));
         box.getChildren().add(createSectionLabel("Reportes"));
-        box.getChildren().add(createMenuButton("Reportes", reportesView.getView()));
+        box.getChildren().add(createMenuButton("Reportes", reportesNode));
 
         return box;
     }
@@ -86,17 +84,19 @@ public class MainView extends BorderPane {
         btn.getStyleClass().add("sidebar-button");
         btn.setMaxWidth(Double.MAX_VALUE);
         btn.setToggleGroup(menuGroup);
-        btn.setOnAction(e -> showView(view));
+        btn.setOnAction(e -> showNode(view));
         return btn;
     }
 
     private BorderPane createContentArea() {
         BorderPane area = new BorderPane();
         area.getStyleClass().add("content-area");
+        area.setMinWidth(780);
+        area.setMinHeight(600);
         return area;
     }
 
-    private void showView(Node view) {
+    private void showNode(Node view) {
         contentArea.setCenter(view);
 
         if (view instanceof Refreshable refreshable) {

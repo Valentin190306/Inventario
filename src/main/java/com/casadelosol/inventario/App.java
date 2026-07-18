@@ -10,6 +10,7 @@ public class App extends Application {
     @Override
     public void start(Stage primaryStage) {
         DatabaseManager.getInstance().initialize();
+        DataSeeder.seed();
 
         MainView mainView = new MainView();
 
@@ -18,6 +19,8 @@ public class App extends Application {
 
         primaryStage.setTitle("Inventario - Casa Del Sol");
         primaryStage.setScene(scene);
+        primaryStage.setMinWidth(1024);
+        primaryStage.setMinHeight(768);
         primaryStage.show();
     }
 

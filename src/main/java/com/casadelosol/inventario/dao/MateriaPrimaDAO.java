@@ -40,6 +40,19 @@ public class MateriaPrimaDAO {
         return null;
     }
 
+    MateriaPrima findById(int id, Connection conn) throws SQLException {
+        String sql = "SELECT id, nombre, unidad_medida, stock_actual, categoria_id FROM materia_prima WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
+            }
+        }
+        return null;
+    }
+
     public List<MateriaPrima> findByCategoria(int categoriaId) {
         List<MateriaPrima> list = new ArrayList<>();
         String sql = "SELECT id, nombre, unidad_medida, stock_actual, categoria_id FROM materia_prima WHERE categoria_id = ? ORDER BY nombre";
@@ -119,6 +132,15 @@ public class MateriaPrimaDAO {
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Error al actualizar stock de materia prima", e);
+        }
+    }
+
+    void updateStock(int id, double nuevoStock, Connection conn) throws SQLException {
+        String sql = "UPDATE materia_prima SET stock_actual = ? WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setDouble(1, nuevoStock);
+            stmt.setInt(2, id);
+            stmt.executeUpdate();
         }
     }
 

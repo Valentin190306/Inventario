@@ -104,9 +104,9 @@ public class CompraDAO {
             }
 
             MateriaPrimaDAO mpDAO = new MateriaPrimaDAO();
-            MateriaPrima mp = mpDAO.findById(compra.getMateriaPrimaId());
+            MateriaPrima mp = mpDAO.findById(compra.getMateriaPrimaId(), conn);
             double nuevoStock = mp.getStockActual() + compra.getCantidad();
-            mpDAO.updateStock(compra.getMateriaPrimaId(), nuevoStock);
+            mpDAO.updateStock(compra.getMateriaPrimaId(), nuevoStock, conn);
 
             conn.commit();
             return compra.getId();

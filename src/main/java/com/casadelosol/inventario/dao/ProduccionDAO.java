@@ -69,7 +69,7 @@ public class ProduccionDAO {
             conn.setAutoCommit(false);
 
             RecetaDAO recetaDAO = new RecetaDAO();
-            Receta receta = recetaDAO.findByProducto(produccion.getProductoTerminadoId());
+            Receta receta = recetaDAO.findByProducto(produccion.getProductoTerminadoId(), conn);
 
             if (receta == null) {
                 throw new RuntimeException("El producto no tiene una receta definida");
@@ -78,7 +78,7 @@ public class ProduccionDAO {
             MateriaPrimaDAO mpDAO = new MateriaPrimaDAO();
 
             for (RecetaDetalle detalle : receta.getDetalles()) {
-                MateriaPrima mp = mpDAO.findById(detalle.getMateriaPrimaId());
+                MateriaPrima mp = mpDAO.findById(detalle.getMateriaPrimaId(), conn);
                 double cantidadRequerida = detalle.getCantidad() * produccion.getCantidad();
                 if (mp.getStockActual() < cantidadRequerida) {
                     throw new RuntimeException("Stock insuficiente de " + mp.getNombre()
@@ -88,9 +88,9 @@ public class ProduccionDAO {
             }
 
             for (RecetaDetalle detalle : receta.getDetalles()) {
-                MateriaPrima mp = mpDAO.findById(detalle.getMateriaPrimaId());
+                MateriaPrima mp = mpDAO.findById(detalle.getMateriaPrimaId(), conn);
                 double nuevaCantidad = mp.getStockActual() - (detalle.getCantidad() * produccion.getCantidad());
-                mpDAO.updateStock(detalle.getMateriaPrimaId(), nuevaCantidad);
+                mpDAO.updateStock(detalle.getMateriaPrimaId(), nuevaCantidad, conn);
             }
 
             String sql = "INSERT INTO produccion (producto_terminado_id, cantidad, fecha) VALUES (?, ?, ?)";
@@ -107,9 +107,9 @@ public class ProduccionDAO {
             }
 
             ProductoTerminadoDAO ptDAO = new ProductoTerminadoDAO();
-            var pt = ptDAO.findById(produccion.getProductoTerminadoId());
+            var pt = ptDAO.findById(produccion.getProductoTerminadoId(), conn);
             double nuevoStockPT = pt.getStockActual() + produccion.getCantidad();
-            ptDAO.updateStock(produccion.getProductoTerminadoId(), nuevoStockPT);
+            ptDAO.updateStock(produccion.getProductoTerminadoId(), nuevoStockPT, conn);
 
             conn.commit();
             return produccion.getId();

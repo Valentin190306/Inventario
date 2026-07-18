@@ -67,7 +67,7 @@ public class VentaDAO {
             conn.setAutoCommit(false);
 
             ProductoTerminadoDAO ptDAO = new ProductoTerminadoDAO();
-            ProductoTerminado pt = ptDAO.findById(venta.getProductoTerminadoId());
+            ProductoTerminado pt = ptDAO.findById(venta.getProductoTerminadoId(), conn);
 
             if (pt.getStockActual() < venta.getCantidad()) {
                 throw new RuntimeException("Stock insuficiente de " + pt.getNombre()
@@ -89,7 +89,7 @@ public class VentaDAO {
             }
 
             double nuevoStock = pt.getStockActual() - venta.getCantidad();
-            ptDAO.updateStock(venta.getProductoTerminadoId(), nuevoStock);
+            ptDAO.updateStock(venta.getProductoTerminadoId(), nuevoStock, conn);
 
             conn.commit();
             return venta.getId();

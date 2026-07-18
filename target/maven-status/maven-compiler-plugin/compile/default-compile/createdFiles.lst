@@ -9,6 +9,7 @@ com/casadelosol/inventario/ui/MateriaPrimaView.class
 com/casadelosol/inventario/ui/CategoriaMPView$CategoriaMPStringConverter.class
 com/casadelosol/inventario/dao/CompraDAO.class
 com/casadelosol/inventario/ui/CategoriaPTView.class
+com/casadelosol/inventario/DataSeeder.class
 module-info.class
 com/casadelosol/inventario/model/Receta.class
 com/casadelosol/inventario/model/Compra.class

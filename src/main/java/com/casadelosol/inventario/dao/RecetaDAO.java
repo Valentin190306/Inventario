@@ -28,6 +28,21 @@ public class RecetaDAO {
         return null;
     }
 
+    Receta findByProducto(int productoTerminadoId, Connection conn) throws SQLException {
+        String sql = "SELECT id, producto_terminado_id, notas FROM receta WHERE producto_terminado_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, productoTerminadoId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    Receta receta = mapRow(rs);
+                    receta.setDetalles(findDetallesByReceta(receta.getId(), conn));
+                    return receta;
+                }
+            }
+        }
+        return null;
+    }
+
     public Receta findById(int id) {
         String sql = "SELECT id, producto_terminado_id, notas FROM receta WHERE id = ?";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
