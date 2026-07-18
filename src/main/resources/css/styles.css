@@ -13,22 +13,35 @@
 
 .sidebar-button {
     -fx-background-color: transparent;
-    -fx-text-fill: #ecf0f1;
+    -fx-text-fill: #bdc3c7;
     -fx-font-size: 13px;
-    -fx-padding: 10 15;
+    -fx-padding: 12 15 12 20;
     -fx-alignment: CENTER-LEFT;
     -fx-cursor: hand;
-    -fx-border-radius: 5;
-    -fx-background-radius: 5;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 0 3px;
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
 }
 
 .sidebar-button:hover {
     -fx-background-color: #34495e;
+    -fx-text-fill: #ecf0f1;
 }
 
 .sidebar-button:selected {
-    -fx-background-color: #3498db;
+    -fx-background-color: #34495e;
     -fx-text-fill: white;
+    -fx-border-color: transparent transparent transparent #3498db;
+    -fx-font-weight: bold;
+}
+
+.sidebar-section-label {
+    -fx-text-fill: #7f8c8d;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 15 5 5 15;
+    -fx-underline: true;
 }
 
 .content-area {

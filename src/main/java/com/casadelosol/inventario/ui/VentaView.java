@@ -18,11 +18,6 @@ import java.time.LocalDate;
 
 public class VentaView implements Refreshable {
 
-    private final ComboBox<ProductoTerminado> cbProducto = new ComboBox<>();
-    private final TextField tfCantidad = new TextField();
-    private final DatePicker dpFecha = new DatePicker(LocalDate.now());
-    private final Label lblStockActual = new Label();
-    private final Label lblTotal = new Label();
     private final TableView<Venta> historialTable = new TableView<>();
     private final ObservableList<Venta> historialData = FXCollections.observableArrayList();
 
@@ -33,38 +28,12 @@ public class VentaView implements Refreshable {
         VBox root = new VBox(15);
         root.setPadding(new Insets(20));
 
-        Label title = new Label("Registrar Venta");
+        Label title = new Label("Ventas");
         title.getStyleClass().add("section-title");
 
-        GridPane form = new GridPane();
-        form.setHgap(10);
-        form.setVgap(10);
-        form.setPadding(new Insets(15));
-        form.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);");
-
-        cbProducto.setPrefWidth(350);
-        cbProducto.setPromptText("Seleccionar producto...");
-        cbProducto.setOnAction(e -> actualizarInfo());
-
-        tfCantidad.setPromptText("Ej: 3");
-        tfCantidad.textProperty().addListener((obs, o, n) -> actualizarTotal());
-
-        Button btnVender = new Button("Registrar Venta");
-        btnVender.getStyleClass().add("btn-success");
-        btnVender.setOnAction(e -> registrarVenta());
-
-        form.add(new Label("Producto Terminado*:"), 0, 0);
-        form.add(cbProducto, 1, 0);
-        form.add(lblStockActual, 1, 1);
-        form.add(new Label("Cantidad a vender*:"), 0, 2);
-        form.add(tfCantidad, 1, 2);
-        form.add(lblTotal, 1, 3);
-        form.add(new Label("Fecha*:"), 0, 4);
-        form.add(dpFecha, 1, 4);
-        form.add(btnVender, 1, 5);
-
-        Label historyTitle = new Label("Historial de Ventas");
-        historyTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 15 0 5 0;");
+        Button btnNueva = new Button("+ Nueva Venta");
+        btnNueva.getStyleClass().add("btn-success");
+        btnNueva.setOnAction(e -> showNuevaVentaDialog());
 
         TableColumn<Venta, String> colPT = new TableColumn<>("Producto");
         colPT.setCellValueFactory(d -> {
@@ -93,28 +62,104 @@ public class VentaView implements Refreshable {
         historialTable.setItems(historialData);
         historialTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
 
-        root.getChildren().addAll(title, form, historyTitle, historialTable);
+        root.getChildren().addAll(title, btnNueva, historialTable);
 
         refresh();
         return root;
     }
 
-    private void actualizarInfo() {
-        ProductoTerminado pt = cbProducto.getValue();
-        if (pt != null) {
-            lblStockActual.setText("Stock disponible: " + pt.getStockActual());
-            lblStockActual.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold;");
-            actualizarTotal();
-        } else {
-            lblStockActual.setText("");
-            lblTotal.setText("");
-        }
+    private void showNuevaVentaDialog() {
+        Dialog<Venta> dialog = new Dialog<>();
+        dialog.setTitle("Nueva Venta");
+        dialog.setHeaderText("Registrar venta de producto terminado");
+
+        ButtonType btnSave = new ButtonType("Registrar Venta", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(btnSave, ButtonType.CANCEL);
+
+        ComboBox<ProductoTerminado> cbProducto = new ComboBox<>();
+        cbProducto.getItems().setAll(ptDAO.findAll());
+        cbProducto.setPrefWidth(350);
+        cbProducto.setPromptText("Seleccionar producto...");
+
+        TextField tfCantidad = new TextField();
+        tfCantidad.setPromptText("Ej: 3");
+
+        DatePicker dpFecha = new DatePicker(LocalDate.now());
+
+        Label lblStockActual = new Label();
+        Label lblTotal = new Label();
+
+        cbProducto.setOnAction(e -> {
+            ProductoTerminado pt = cbProducto.getValue();
+            if (pt != null) {
+                lblStockActual.setText("Stock disponible: " + pt.getStockActual());
+                lblStockActual.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold;");
+                actualizarTotalVenta(pt, tfCantidad, lblTotal);
+            } else {
+                lblStockActual.setText("");
+                lblTotal.setText("");
+            }
+        });
+
+        tfCantidad.textProperty().addListener((obs, o, n) -> {
+            ProductoTerminado pt = cbProducto.getValue();
+            if (pt != null) actualizarTotalVenta(pt, tfCantidad, lblTotal);
+        });
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(15));
+        grid.add(new Label("Producto Terminado*:"), 0, 0);
+        grid.add(cbProducto, 1, 0);
+        grid.add(lblStockActual, 1, 1);
+        grid.add(new Label("Cantidad a vender*:"), 0, 2);
+        grid.add(tfCantidad, 1, 2);
+        grid.add(lblTotal, 1, 3);
+        grid.add(new Label("Fecha*:"), 0, 4);
+        grid.add(dpFecha, 1, 4);
+
+        dialog.getDialogPane().setContent(grid);
+
+        Button saveButton = (Button) dialog.getDialogPane().lookupButton(btnSave);
+        saveButton.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+            String error = null;
+            if (cbProducto.getValue() == null) error = "Seleccione un producto";
+            else if (tfCantidad.getText().trim().isEmpty()) error = "Ingrese la cantidad a vender";
+            if (error != null) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, error, ButtonType.OK);
+                alert.showAndWait();
+                event.consume();
+            }
+        });
+
+        dialog.setResultConverter(btn -> {
+            if (btn == btnSave) {
+                try {
+                    double cantidad = Double.parseDouble(tfCantidad.getText().trim());
+                    if (cantidad <= 0) {
+                        Alert alert = new Alert(Alert.AlertType.WARNING, "La cantidad debe ser mayor a cero", ButtonType.OK);
+                        alert.showAndWait();
+                        return null;
+                    }
+                    Venta venta = new Venta(cbProducto.getValue().getId(), cantidad, dpFecha.getValue());
+                    ventaDAO.save(venta);
+                    return venta;
+                } catch (NumberFormatException e) {
+                    return null;
+                } catch (RuntimeException e) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Error: " + e.getMessage(), ButtonType.OK);
+                    alert.showAndWait();
+                    return null;
+                }
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(v -> refresh());
     }
 
-    private void actualizarTotal() {
-        ProductoTerminado pt = cbProducto.getValue();
-        if (pt == null) return;
-
+    private void actualizarTotalVenta(ProductoTerminado pt, TextField tfCantidad, Label lblTotal) {
         try {
             double cantidad = Double.parseDouble(tfCantidad.getText().trim());
             double total = cantidad * pt.getPrecioVenta();
@@ -125,54 +170,8 @@ public class VentaView implements Refreshable {
         }
     }
 
-    private void registrarVenta() {
-        ProductoTerminado pt = cbProducto.getValue();
-        if (pt == null) {
-            showAlert("Seleccione un producto");
-            return;
-        }
-        if (tfCantidad.getText().trim().isEmpty()) {
-            showAlert("Ingrese la cantidad a vender");
-            return;
-        }
-
-        try {
-            double cantidad = Double.parseDouble(tfCantidad.getText().trim());
-            if (cantidad <= 0) {
-                showAlert("La cantidad debe ser mayor a cero");
-                return;
-            }
-
-            Venta venta = new Venta(pt.getId(), cantidad, dpFecha.getValue());
-            ventaDAO.save(venta);
-
-            tfCantidad.clear();
-            dpFecha.setValue(LocalDate.now());
-
-            showInfo("Venta registrada correctamente");
-            refresh();
-        } catch (NumberFormatException e) {
-            showAlert("La cantidad debe ser un número válido");
-        } catch (RuntimeException e) {
-            showAlert("Error: " + e.getMessage());
-        }
-    }
-
-    private void showAlert(String msg) {
-        Alert alert = new Alert(Alert.AlertType.WARNING, msg, ButtonType.OK);
-        alert.showAndWait();
-    }
-
-    private void showInfo(String msg) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION, msg, ButtonType.OK);
-        alert.showAndWait();
-    }
-
     @Override
     public void refresh() {
-        cbProducto.getItems().setAll(ptDAO.findAll());
         historialData.setAll(ventaDAO.findAll());
-        lblStockActual.setText("");
-        lblTotal.setText("");
     }
 }

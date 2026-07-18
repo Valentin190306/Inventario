@@ -10,6 +10,33 @@ import java.util.List;
 
 public class RecetaDAO {
 
+    public List<Receta> findAll() {
+        List<Receta> list = new ArrayList<>();
+        String sql = """
+            SELECT r.id, r.producto_terminado_id, p.nombre as producto_nombre, r.notas,
+                   (SELECT COUNT(*) FROM receta_detalle WHERE receta_id = r.id) as total_ingredientes
+            FROM receta r
+            JOIN producto_terminado p ON r.producto_terminado_id = p.id
+            ORDER BY p.nombre
+            """;
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                Receta r = new Receta();
+                r.setId(rs.getInt("id"));
+                r.setProductoTerminadoId(rs.getInt("producto_terminado_id"));
+                String notas = rs.getString("notas");
+                if (!rs.wasNull()) r.setNotas(notas);
+                r.setDetalles(new ArrayList<>());
+                list.add(r);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al listar recetas", e);
+        }
+        return list;
+    }
+
     public Receta findByProducto(int productoTerminadoId) {
         String sql = "SELECT id, producto_terminado_id, notas FROM receta WHERE producto_terminado_id = ?";
         try (Connection conn = DatabaseManager.getInstance().getConnection();

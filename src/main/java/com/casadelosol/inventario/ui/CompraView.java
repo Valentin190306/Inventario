@@ -18,14 +18,8 @@ import java.time.LocalDate;
 
 public class CompraView implements Refreshable {
 
-    private final ComboBox<MateriaPrima> cbMP = new ComboBox<>();
-    private final DatePicker dpFecha = new DatePicker(LocalDate.now());
-    private final TextField tfCantidad = new TextField();
-    private final TextField tfPrecio = new TextField();
-    private final TextField tfLugar = new TextField();
     private final TableView<Compra> table = new TableView<>();
     private final ObservableList<Compra> data = FXCollections.observableArrayList();
-    private final Label lblPrecioUnitario = new Label();
 
     private final CompraDAO compraDAO = new CompraDAO();
     private final MateriaPrimaDAO mpDAO = new MateriaPrimaDAO();
@@ -34,46 +28,12 @@ public class CompraView implements Refreshable {
         VBox root = new VBox(15);
         root.setPadding(new Insets(20));
 
-        Label title = new Label("Registrar Compra de Materia Prima");
+        Label title = new Label("Compras de Materia Prima");
         title.getStyleClass().add("section-title");
 
-        GridPane form = new GridPane();
-        form.setHgap(10);
-        form.setVgap(10);
-        form.setPadding(new Insets(15));
-        form.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);");
-
-        cbMP.setPrefWidth(300);
-        cbMP.setPromptText("Seleccionar materia prima...");
-
-        dpFecha.setPrefWidth(150);
-
-        tfCantidad.setPromptText("Ej: 500");
-        tfPrecio.setPromptText("Ej: 2500.00");
-        tfLugar.setPromptText("Ej: Mercado Central (opcional)");
-
-        tfCantidad.textProperty().addListener((obs, o, n) -> actualizarPrecioUnitario());
-        tfPrecio.textProperty().addListener((obs, o, n) -> actualizarPrecioUnitario());
-
-        Button btnGuardar = new Button("Registrar Compra");
-        btnGuardar.getStyleClass().add("btn-success");
-        btnGuardar.setOnAction(e -> registrarCompra());
-
-        form.add(new Label("Materia Prima*:"), 0, 0);
-        form.add(cbMP, 1, 0);
-        form.add(new Label("Fecha*:"), 0, 1);
-        form.add(dpFecha, 1, 1);
-        form.add(new Label("Cantidad*:"), 0, 2);
-        form.add(tfCantidad, 1, 2);
-        form.add(new Label("Precio total*:"), 0, 3);
-        form.add(tfPrecio, 1, 3);
-        form.add(new Label("Lugar:"), 0, 4);
-        form.add(tfLugar, 1, 4);
-        form.add(lblPrecioUnitario, 1, 5);
-        form.add(btnGuardar, 1, 6);
-
-        Label historyTitle = new Label("Historial de Compras");
-        historyTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10 0 0 0;");
+        Button btnNueva = new Button("+ Nueva Compra");
+        btnNueva.getStyleClass().add("btn-success");
+        btnNueva.setOnAction(e -> showNuevaCompraDialog());
 
         TableColumn<Compra, String> colMP = new TableColumn<>("Materia Prima");
         colMP.setCellValueFactory(d -> {
@@ -109,80 +69,117 @@ public class CompraView implements Refreshable {
         table.setItems(data);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
 
-        cbMP.setOnAction(e -> {
-            MateriaPrima selected = cbMP.getValue();
-            if (selected != null) {
-                data.setAll(compraDAO.findByMateriaPrima(selected.getId()));
-            } else {
-                data.clear();
-            }
-        });
-
-        root.getChildren().addAll(title, form, historyTitle, table);
+        root.getChildren().addAll(title, btnNueva, table);
 
         refresh();
         return root;
     }
 
-    private void actualizarPrecioUnitario() {
-        try {
-            double cantidad = Double.parseDouble(tfCantidad.getText().trim());
-            double precio = Double.parseDouble(tfPrecio.getText().trim());
-            if (cantidad > 0) {
-                lblPrecioUnitario.setText("Precio unitario: $" + String.format("%.2f", precio / cantidad));
+    private void showNuevaCompraDialog() {
+        Dialog<Compra> dialog = new Dialog<>();
+        dialog.setTitle("Nueva Compra");
+        dialog.setHeaderText("Registrar compra de materia prima");
+
+        ButtonType btnSave = new ButtonType("Registrar Compra", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(btnSave, ButtonType.CANCEL);
+
+        ComboBox<MateriaPrima> cbMP = new ComboBox<>();
+        cbMP.getItems().setAll(mpDAO.findAll());
+        cbMP.setPrefWidth(300);
+        cbMP.setPromptText("Seleccionar materia prima...");
+
+        DatePicker dpFecha = new DatePicker(LocalDate.now());
+        dpFecha.setPrefWidth(150);
+
+        TextField tfCantidad = new TextField();
+        tfCantidad.setPromptText("Ej: 500");
+
+        TextField tfPrecio = new TextField();
+        tfPrecio.setPromptText("Ej: 2500.00");
+
+        TextField tfLugar = new TextField();
+        tfLugar.setPromptText("Ej: Mercado Central (opcional)");
+
+        Label lblPrecioUnitario = new Label();
+
+        tfCantidad.textProperty().addListener((obs, o, n) -> {
+            try {
+                double cant = Double.parseDouble(n.trim());
+                double prec = Double.parseDouble(tfPrecio.getText().trim());
+                if (cant > 0)
+                    lblPrecioUnitario.setText("Precio unitario: $" + String.format("%.2f", prec / cant));
+            } catch (NumberFormatException e) {
+                lblPrecioUnitario.setText("");
             }
-        } catch (NumberFormatException e) {
-            lblPrecioUnitario.setText("");
-        }
-    }
-
-    private void registrarCompra() {
-        MateriaPrima mp = cbMP.getValue();
-        if (mp == null) {
-            showAlert("Seleccione una materia prima");
-            return;
-        }
-        if (tfCantidad.getText().trim().isEmpty() || tfPrecio.getText().trim().isEmpty()) {
-            showAlert("Complete cantidad y precio");
-            return;
-        }
-
-        try {
-            double cantidad = Double.parseDouble(tfCantidad.getText().trim());
-            double precio = Double.parseDouble(tfPrecio.getText().trim());
-            LocalDate fecha = dpFecha.getValue();
-
-            Compra compra = new Compra(mp.getId(), fecha, cantidad, precio);
-            String lugar = tfLugar.getText().trim();
-            if (!lugar.isEmpty()) {
-                compra.setLugar(lugar);
+        });
+        tfPrecio.textProperty().addListener((obs, o, n) -> {
+            try {
+                double cant = Double.parseDouble(tfCantidad.getText().trim());
+                double prec = Double.parseDouble(n.trim());
+                if (cant > 0)
+                    lblPrecioUnitario.setText("Precio unitario: $" + String.format("%.2f", prec / cant));
+            } catch (NumberFormatException e) {
+                lblPrecioUnitario.setText("");
             }
+        });
 
-            compraDAO.save(compra);
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(15));
+        grid.add(new Label("Materia Prima*:"), 0, 0);
+        grid.add(cbMP, 1, 0);
+        grid.add(new Label("Fecha*:"), 0, 1);
+        grid.add(dpFecha, 1, 1);
+        grid.add(new Label("Cantidad*:"), 0, 2);
+        grid.add(tfCantidad, 1, 2);
+        grid.add(new Label("Precio total*:"), 0, 3);
+        grid.add(tfPrecio, 1, 3);
+        grid.add(new Label("Lugar:"), 0, 4);
+        grid.add(tfLugar, 1, 4);
+        grid.add(lblPrecioUnitario, 1, 5);
 
-            tfCantidad.clear();
-            tfPrecio.clear();
-            tfLugar.clear();
-            lblPrecioUnitario.setText("");
-            dpFecha.setValue(LocalDate.now());
+        dialog.getDialogPane().setContent(grid);
 
-            data.setAll(compraDAO.findByMateriaPrima(mp.getId()));
+        Button saveButton = (Button) dialog.getDialogPane().lookupButton(btnSave);
+        saveButton.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+            String error = null;
+            if (cbMP.getValue() == null) error = "Seleccione una materia prima";
+            else if (tfCantidad.getText().trim().isEmpty() || tfPrecio.getText().trim().isEmpty())
+                error = "Complete cantidad y precio";
+            if (error != null) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, error, ButtonType.OK);
+                alert.showAndWait();
+                event.consume();
+            }
+        });
 
-        } catch (NumberFormatException e) {
-            showAlert("Cantidad y precio deben ser números válidos");
-        } catch (RuntimeException e) {
-            showAlert("Error: " + e.getMessage());
-        }
-    }
+        dialog.setResultConverter(btn -> {
+            if (btn == btnSave) {
+                try {
+                    double cantidad = Double.parseDouble(tfCantidad.getText().trim());
+                    double precio = Double.parseDouble(tfPrecio.getText().trim());
+                    Compra compra = new Compra(cbMP.getValue().getId(), dpFecha.getValue(), cantidad, precio);
+                    String lugar = tfLugar.getText().trim();
+                    if (!lugar.isEmpty()) compra.setLugar(lugar);
+                    compraDAO.save(compra);
+                    return compra;
+                } catch (NumberFormatException e) {
+                    return null;
+                } catch (RuntimeException e) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Error: " + e.getMessage(), ButtonType.OK);
+                    alert.showAndWait();
+                    return null;
+                }
+            }
+            return null;
+        });
 
-    private void showAlert(String msg) {
-        Alert alert = new Alert(Alert.AlertType.WARNING, msg, ButtonType.OK);
-        alert.showAndWait();
+        dialog.showAndWait().ifPresent(compra -> refresh());
     }
 
     @Override
     public void refresh() {
-        cbMP.getItems().setAll(mpDAO.findAll());
-        data.clear();
+        data.setAll(compraDAO.findAll());
     }
 }

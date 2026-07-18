@@ -22,6 +22,7 @@ com/casadelosol/inventario/ui/StockView$1.class
 com/casadelosol/inventario/Launcher.class
 com/casadelosol/inventario/ui/Refreshable.class
 com/casadelosol/inventario/dao/ProduccionDAO.class
+com/casadelosol/inventario/ui/RecetaView$RecetaResumen.class
 com/casadelosol/inventario/dao/CategoriaPTDAO.class
 com/casadelosol/inventario/ui/VentaView.class
 com/casadelosol/inventario/ui/RecetaView.class

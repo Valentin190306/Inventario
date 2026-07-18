@@ -56,26 +56,26 @@ public class MainView extends BorderPane {
         title.getStyleClass().add("sidebar-title");
 
         box.getChildren().add(title);
-        box.getChildren().add(createMenuButton("Stock General", stockNode));
-        box.getChildren().add(createSectionLabel("Materias Primas"));
-        box.getChildren().add(createMenuButton("Categorías", categoriaMPNode));
-        box.getChildren().add(createMenuButton("Materias Primas", materiaPrimaNode));
-        box.getChildren().add(createMenuButton("Compras", compraNode));
-        box.getChildren().add(createSectionLabel("Productos"));
-        box.getChildren().add(createMenuButton("Categorías", categoriaPTNode));
-        box.getChildren().add(createMenuButton("Productos", productoTerminadoNode));
-        box.getChildren().add(createMenuButton("Recetas", recetaNode));
-        box.getChildren().add(createMenuButton("Producción", produccionNode));
-        box.getChildren().add(createMenuButton("Ventas", ventaNode));
-        box.getChildren().add(createSectionLabel("Reportes"));
-        box.getChildren().add(createMenuButton("Reportes", reportesNode));
+        box.getChildren().add(createMenuButton("◉  Stock General", stockNode));
+        box.getChildren().add(createSectionLabel("MATERIAS PRIMAS"));
+        box.getChildren().add(createMenuButton("▸  Categorías", categoriaMPNode));
+        box.getChildren().add(createMenuButton("◆  Materias Primas", materiaPrimaNode));
+        box.getChildren().add(createMenuButton("◇  Compras", compraNode));
+        box.getChildren().add(createSectionLabel("PRODUCTOS"));
+        box.getChildren().add(createMenuButton("▸  Categorías", categoriaPTNode));
+        box.getChildren().add(createMenuButton("■  Productos", productoTerminadoNode));
+        box.getChildren().add(createMenuButton("☰  Recetas", recetaNode));
+        box.getChildren().add(createMenuButton("⚙  Producción", produccionNode));
+        box.getChildren().add(createMenuButton("$  Ventas", ventaNode));
+        box.getChildren().add(createSectionLabel("REPORTES"));
+        box.getChildren().add(createMenuButton("▤  Reportes", reportesNode));
 
         return box;
     }
 
     private Label createSectionLabel(String text) {
         Label label = new Label(text);
-        label.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 15 5 5 5; -fx-underline: true;");
+        label.getStyleClass().add("sidebar-section-label");
         return label;
     }
 

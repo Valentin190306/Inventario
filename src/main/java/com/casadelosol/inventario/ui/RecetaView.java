@@ -8,6 +8,7 @@ import com.casadelosol.inventario.model.ProductoTerminado;
 import com.casadelosol.inventario.model.Receta;
 import com.casadelosol.inventario.model.RecetaDetalle;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -17,21 +18,17 @@ import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.util.StringConverter;
+
+import java.util.List;
 
 public class RecetaView implements Refreshable {
 
-    private final ComboBox<ProductoTerminado> cbProducto = new ComboBox<>();
-    private final TextArea taNotas = new TextArea();
-    private final TableView<RecetaDetalle> table = new TableView<>();
-    private final ObservableList<RecetaDetalle> detalles = FXCollections.observableArrayList();
-    private final Label lblStatus = new Label();
+    private final TableView<RecetaResumen> table = new TableView<>();
+    private final ObservableList<RecetaResumen> data = FXCollections.observableArrayList();
 
     private final RecetaDAO recetaDAO = new RecetaDAO();
     private final ProductoTerminadoDAO ptDAO = new ProductoTerminadoDAO();
     private final MateriaPrimaDAO mpDAO = new MateriaPrimaDAO();
-
-    private Receta recetaActual;
 
     public Node getView() {
         VBox root = new VBox(15);
@@ -40,52 +37,87 @@ public class RecetaView implements Refreshable {
         Label title = new Label("Recetas");
         title.getStyleClass().add("section-title");
 
-        GridPane selectorPanel = new GridPane();
-        selectorPanel.setHgap(10);
-        selectorPanel.setVgap(10);
-        selectorPanel.setPadding(new Insets(15));
-        selectorPanel.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);");
+        Button btnGestionar = new Button("Administrar Recetas");
+        btnGestionar.getStyleClass().add("btn-primary");
+        btnGestionar.setOnAction(e -> showRecetaDialog(null));
 
+        TableColumn<RecetaResumen, String> colProducto = new TableColumn<>("Producto");
+        colProducto.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().producto()));
+        colProducto.setPrefWidth(250);
+
+        TableColumn<RecetaResumen, Number> colIngredientes = new TableColumn<>("Ingredientes");
+        colIngredientes.setCellValueFactory(d -> new SimpleIntegerProperty(d.getValue().ingredientes()));
+        colIngredientes.setPrefWidth(100);
+
+        TableColumn<RecetaResumen, String> colEstado = new TableColumn<>("Estado");
+        colEstado.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().estado()));
+        colEstado.setPrefWidth(120);
+
+        table.getColumns().addAll(colProducto, colIngredientes, colEstado);
+        table.setItems(data);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        table.setRowFactory(tv -> {
+            TableRow<RecetaResumen> row = new TableRow<>();
+            row.setOnMouseClicked(e -> {
+                if (e.getClickCount() == 2 && !row.isEmpty()) {
+                    showRecetaDialog(row.getItem().recetaId());
+                }
+            });
+            return row;
+        });
+
+        root.getChildren().addAll(title, btnGestionar, table);
+
+        refresh();
+        return root;
+    }
+
+    private void showRecetaDialog(Integer recetaId) {
+        Receta receta = recetaId != null ? recetaDAO.findById(recetaId) : null;
+
+        Dialog<Receta> dialog = new Dialog<>();
+        dialog.setTitle(receta != null ? "Editar Receta" : "Nueva Receta");
+        dialog.setHeaderText(receta != null ? "Editar receta existente" : "Crear nueva receta");
+
+        ButtonType btnSave = new ButtonType("Guardar Receta", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(btnSave, ButtonType.CANCEL);
+
+        ComboBox<ProductoTerminado> cbProducto = new ComboBox<>();
+        cbProducto.getItems().addAll(ptDAO.findAll());
         cbProducto.setPrefWidth(350);
         cbProducto.setPromptText("Seleccionar producto...");
-        cbProducto.setOnAction(e -> cargarReceta());
-
-        taNotas.setPromptText("Notas de la receta (procedimiento, observaciones...)");
-        taNotas.setPrefRowCount(3);
-
-        Button btnGuardar = new Button("Guardar Receta");
-        btnGuardar.getStyleClass().add("btn-success");
-        btnGuardar.setOnAction(e -> guardarReceta());
-
-        selectorPanel.add(new Label("Producto Terminado:"), 0, 0);
-        selectorPanel.add(cbProducto, 1, 0);
-        selectorPanel.add(lblStatus, 1, 1);
-
-        Label ingredientsTitle = new Label("Ingredientes (Materias Primas)");
-        ingredientsTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10 0 5 0;");
-
-        HBox ingredientButtons = new HBox(10);
-        Button btnAddIngredient = new Button("Agregar Insumo");
-        btnAddIngredient.getStyleClass().add("btn-primary");
-        btnAddIngredient.setOnAction(e -> showAddIngredientDialog());
-
-        Button btnRemoveIngredient = new Button("Quitar");
-        btnRemoveIngredient.getStyleClass().add("btn-danger");
-        btnRemoveIngredient.setOnAction(e -> {
-            RecetaDetalle selected = table.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                detalles.remove(selected);
+        if (receta != null) {
+            ProductoTerminado pt = ptDAO.findById(receta.getProductoTerminadoId());
+            if (pt != null) cbProducto.setValue(pt);
+            cbProducto.setDisable(true);
+        }
+        cbProducto.setOnAction(e -> {
+            if (cbProducto.getValue() != null && receta == null) {
+                Receta existente = recetaDAO.findByProducto(cbProducto.getValue().getId());
+                if (existente != null) {
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                            "Ya existe una receta para este producto. ¿Desea editarla?",
+                            ButtonType.YES, ButtonType.NO);
+                    alert.showAndWait().ifPresent(r -> {
+                        if (r == ButtonType.YES) {
+                            dialog.close();
+                            showRecetaDialog(existente.getId());
+                        }
+                    });
+                }
             }
         });
 
-        ingredientButtons.getChildren().addAll(btnAddIngredient, btnRemoveIngredient);
+        TableView<RecetaDetalle> tblIngredientes = new TableView<>();
+        ObservableList<RecetaDetalle> detalles = FXCollections.observableArrayList();
+        if (receta != null) detalles.setAll(receta.getDetalles());
 
         TableColumn<RecetaDetalle, String> colMP = new TableColumn<>("Materia Prima");
         colMP.setCellValueFactory(d -> {
             MateriaPrima mp = mpDAO.findById(d.getValue().getMateriaPrimaId());
             return new SimpleStringProperty(mp != null ? mp.getNombre() : "");
         });
-        colMP.setPrefWidth(250);
+        colMP.setPrefWidth(200);
 
         TableColumn<RecetaDetalle, Number> colCantidad = new TableColumn<>("Cantidad");
         colCantidad.setCellValueFactory(d -> new SimpleDoubleProperty(d.getValue().getCantidad()));
@@ -98,147 +130,144 @@ public class RecetaView implements Refreshable {
         });
         colUnidad.setPrefWidth(80);
 
-        table.getColumns().addAll(colMP, colCantidad, colUnidad);
-        table.setItems(detalles);
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
-        table.setPrefHeight(250);
+        tblIngredientes.getColumns().addAll(colMP, colCantidad, colUnidad);
+        tblIngredientes.setItems(detalles);
+        tblIngredientes.setPrefHeight(200);
+        tblIngredientes.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
 
-        HBox notasPanel = new HBox(10);
-        notasPanel.getChildren().addAll(new Label("Notas:"), taNotas);
+        Button btnAdd = new Button("Agregar Insumo");
+        btnAdd.getStyleClass().add("btn-primary");
+        Button btnRemove = new Button("Quitar");
+        btnRemove.getStyleClass().add("btn-danger");
 
-        root.getChildren().addAll(title, selectorPanel, ingredientsTitle, ingredientButtons, table, notasPanel, btnGuardar);
+        btnRemove.setOnAction(e -> {
+            RecetaDetalle sel = tblIngredientes.getSelectionModel().getSelectedItem();
+            if (sel != null) detalles.remove(sel);
+        });
 
-        refresh();
-        return root;
-    }
+        btnAdd.setOnAction(e -> {
+            Dialog<RecetaDetalle> dlg = new Dialog<>();
+            dlg.setTitle("Agregar Insumo");
+            dlg.setHeaderText("Agregar materia prima a la receta");
 
-    private void cargarReceta() {
-        ProductoTerminado pt = cbProducto.getValue();
-        if (pt == null) {
-            detalles.clear();
-            taNotas.clear();
-            lblStatus.setText("");
-            return;
-        }
+            ButtonType btnAgregar = new ButtonType("Agregar", ButtonBar.ButtonData.OK_DONE);
+            dlg.getDialogPane().getButtonTypes().addAll(btnAgregar, ButtonType.CANCEL);
 
-        recetaActual = recetaDAO.findByProducto(pt.getId());
-        if (recetaActual != null) {
-            detalles.setAll(recetaActual.getDetalles());
-            taNotas.setText(recetaActual.getNotas() != null ? recetaActual.getNotas() : "");
-            lblStatus.setText("✔ Receta cargada - " + recetaActual.getId());
-            lblStatus.setStyle("-fx-text-fill: #27ae60;");
-        } else {
-            detalles.clear();
-            taNotas.clear();
-            recetaActual = new Receta(pt.getId());
-            lblStatus.setText("Nueva receta - sin ingredientes aún");
-            lblStatus.setStyle("-fx-text-fill: #7f8c8d;");
-        }
-    }
+            ComboBox<MateriaPrima> cbMP = new ComboBox<>();
+            cbMP.getItems().addAll(mpDAO.findAll());
+            cbMP.setPrefWidth(300);
+            cbMP.setPromptText("Seleccionar materia prima...");
 
-    private void showAddIngredientDialog() {
-        if (cbProducto.getValue() == null) {
-            showAlert("Seleccione un producto primero");
-            return;
-        }
+            TextField tfCant = new TextField();
+            tfCant.setPromptText("Cantidad requerida");
 
-        Dialog<RecetaDetalle> dialog = new Dialog<>();
-        dialog.setTitle("Agregar Insumo");
-        dialog.setHeaderText("Agregar materia prima a la receta");
+            GridPane g = new GridPane();
+            g.setHgap(10); g.setVgap(10); g.setPadding(new Insets(15));
+            g.add(new Label("Materia Prima:"), 0, 0);
+            g.add(cbMP, 1, 0);
+            g.add(new Label("Cantidad:"), 0, 1);
+            g.add(tfCant, 1, 1);
+            dlg.getDialogPane().setContent(g);
 
-        ButtonType btnAgregar = new ButtonType("Agregar", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(btnAgregar, ButtonType.CANCEL);
+            dlg.setResultConverter(btn -> {
+                if (btn == btnAgregar) {
+                    if (cbMP.getValue() == null || tfCant.getText().trim().isEmpty()) return null;
+                    try {
+                        return new RecetaDetalle(cbMP.getValue().getId(), Double.parseDouble(tfCant.getText().trim()));
+                    } catch (NumberFormatException ex) { return null; }
+                }
+                return null;
+            });
 
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(15));
+            dlg.showAndWait().ifPresent(det -> {
+                boolean existe = detalles.stream().anyMatch(d -> d.getMateriaPrimaId() == det.getMateriaPrimaId());
+                if (existe) {
+                    Alert alert = new Alert(Alert.AlertType.WARNING, "Esa materia prima ya está en la receta", ButtonType.OK);
+                    alert.showAndWait();
+                    return;
+                }
+                detalles.add(det);
+            });
+        });
 
-        ComboBox<MateriaPrima> cbMP = new ComboBox<>();
-        cbMP.getItems().addAll(mpDAO.findAll());
-        cbMP.setPrefWidth(300);
-        cbMP.setPromptText("Seleccionar materia prima...");
+        TextArea taNotas = new TextArea();
+        taNotas.setPromptText("Notas de la receta (procedimiento, observaciones...)");
+        taNotas.setPrefRowCount(3);
+        if (receta != null) taNotas.setText(receta.getNotas() != null ? receta.getNotas() : "");
 
-        TextField tfCantidad = new TextField();
-        tfCantidad.setPromptText("Cantidad requerida");
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(15));
+        content.getChildren().addAll(
+                new Label("Producto Terminado:"), cbProducto,
+                new Label("Ingredientes:"),
+                new HBox(10, btnAdd, btnRemove),
+                tblIngredientes,
+                new Label("Notas:"), taNotas
+        );
+        dialog.getDialogPane().setContent(content);
 
-        grid.add(new Label("Materia Prima:"), 0, 0);
-        grid.add(cbMP, 1, 0);
-        grid.add(new Label("Cantidad:"), 0, 1);
-        grid.add(tfCantidad, 1, 1);
-
-        dialog.getDialogPane().setContent(grid);
+        Button saveButton = (Button) dialog.getDialogPane().lookupButton(btnSave);
+        saveButton.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+            String error = null;
+            if (cbProducto.getValue() == null) error = "Seleccione un producto";
+            else if (detalles.isEmpty()) error = "Agregue al menos un ingrediente";
+            if (error != null) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, error, ButtonType.OK);
+                alert.showAndWait();
+                event.consume();
+            }
+        });
 
         dialog.setResultConverter(btn -> {
-            if (btn == btnAgregar) {
-                if (cbMP.getValue() == null || tfCantidad.getText().trim().isEmpty()) {
-                    return null;
-                }
+            if (btn == btnSave) {
                 try {
-                    double cantidad = Double.parseDouble(tfCantidad.getText().trim());
-                    return new RecetaDetalle(cbMP.getValue().getId(), cantidad);
-                } catch (NumberFormatException e) {
+                    Receta r;
+                    if (receta != null) {
+                        r = receta;
+                    } else {
+                        r = new Receta(cbProducto.getValue().getId());
+                    }
+                    r.setNotas(taNotas.getText().trim());
+                    r.setDetalles(detalles.stream()
+                            .map(d -> new RecetaDetalle(d.getMateriaPrimaId(), d.getCantidad()))
+                            .toList());
+                    if (r.getId() > 0) recetaDAO.update(r);
+                    else recetaDAO.save(r);
+                    return r;
+                } catch (RuntimeException e) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Error al guardar: " + e.getMessage(), ButtonType.OK);
+                    alert.showAndWait();
                     return null;
                 }
             }
             return null;
         });
 
-        dialog.showAndWait().ifPresent(detalle -> {
-            boolean existe = detalles.stream()
-                    .anyMatch(d -> d.getMateriaPrimaId() == detalle.getMateriaPrimaId());
-            if (existe) {
-                showAlert("Esa materia prima ya está en la receta");
-                return;
-            }
-            detalles.add(detalle);
-        });
-    }
-
-    private void guardarReceta() {
-        if (cbProducto.getValue() == null) {
-            showAlert("Seleccione un producto");
-            return;
-        }
-        if (detalles.isEmpty()) {
-            showAlert("Agregue al menos un ingrediente");
-            return;
-        }
-
-        recetaActual.setNotas(taNotas.getText().trim());
-        recetaActual.setDetalles(detalles.stream()
-                .map(d -> new RecetaDetalle(d.getMateriaPrimaId(), d.getCantidad()))
-                .toList());
-
-        try {
-            if (recetaActual.getId() > 0) {
-                recetaDAO.update(recetaActual);
-            } else {
-                recetaDAO.save(recetaActual);
-            }
-            cargarReceta();
-            showInfo("Receta guardada correctamente");
-        } catch (Exception e) {
-            showAlert("Error al guardar: " + e.getMessage());
-        }
-    }
-
-    private void showAlert(String msg) {
-        Alert alert = new Alert(Alert.AlertType.WARNING, msg, ButtonType.OK);
-        alert.showAndWait();
-    }
-
-    private void showInfo(String msg) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION, msg, ButtonType.OK);
-        alert.showAndWait();
+        dialog.showAndWait().ifPresent(r -> refresh());
     }
 
     @Override
     public void refresh() {
-        cbProducto.getItems().setAll(ptDAO.findAll());
-        detalles.clear();
-        taNotas.clear();
-        recetaActual = null;
-        lblStatus.setText("");
+        List<Receta> recetas = recetaDAO.findAll();
+        List<ProductoTerminado> productos = ptDAO.findAll();
+        data.clear();
+        for (ProductoTerminado pt : productos) {
+            Receta r = recetas.stream()
+                    .filter(rec -> rec.getProductoTerminadoId() == pt.getId())
+                    .findFirst().orElse(null);
+            int count = 0;
+            if (r != null) {
+                Receta full = recetaDAO.findById(r.getId());
+                count = full != null ? full.getDetalles().size() : 0;
+            }
+            data.add(new RecetaResumen(
+                    pt.getNombre(),
+                    count,
+                    r != null ? "Tiene receta" : "Sin receta",
+                    r != null ? r.getId() : null
+            ));
+        }
     }
+
+    private record RecetaResumen(String producto, int ingredientes, String estado, Integer recetaId) {}
 }
