@@ -18,4 +18,16 @@
 /home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/model/Receta.java
 /home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/model/RecetaDetalle.java
 /home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/model/Venta.java
+/home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/ui/CategoriaMPView.java
+/home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/ui/CategoriaPTView.java
+/home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/ui/CompraView.java
+/home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/ui/MainView.java
+/home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/ui/MateriaPrimaView.java
+/home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/ui/ProduccionView.java
+/home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/ui/ProductoTerminadoView.java
+/home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/ui/RecetaView.java
+/home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/ui/Refreshable.java
+/home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/ui/ReportesView.java
+/home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/ui/StockView.java
+/home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/com/casadelosol/inventario/ui/VentaView.java
 /home/valentin/Proyectos/Casa Del Sol/Inventario/src/main/java/module-info.java

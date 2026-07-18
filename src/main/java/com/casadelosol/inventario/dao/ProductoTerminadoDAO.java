@@ -13,8 +13,8 @@ public class ProductoTerminadoDAO {
         List<ProductoTerminado> list = new ArrayList<>();
         String sql = "SELECT id, nombre, precio_venta, stock_actual, categoria_id FROM producto_terminado ORDER BY nombre";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 list.add(mapRow(rs));
             }
@@ -27,7 +27,7 @@ public class ProductoTerminadoDAO {
     public ProductoTerminado findById(int id) {
         String sql = "SELECT id, nombre, precio_venta, stock_actual, categoria_id FROM producto_terminado WHERE id = ?";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -44,7 +44,7 @@ public class ProductoTerminadoDAO {
         List<ProductoTerminado> list = new ArrayList<>();
         String sql = "SELECT id, nombre, precio_venta, stock_actual, categoria_id FROM producto_terminado WHERE categoria_id = ? ORDER BY nombre";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, categoriaId);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -61,7 +61,7 @@ public class ProductoTerminadoDAO {
         List<ProductoTerminado> list = new ArrayList<>();
         String sql = "SELECT id, nombre, precio_venta, stock_actual, categoria_id FROM producto_terminado WHERE nombre LIKE ? ORDER BY nombre";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, "%" + texto + "%");
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -77,7 +77,7 @@ public class ProductoTerminadoDAO {
     public int save(ProductoTerminado pt) {
         String sql = "INSERT INTO producto_terminado (nombre, precio_venta, stock_actual, categoria_id) VALUES (?, ?, ?, ?)";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, pt.getNombre());
             stmt.setDouble(2, pt.getPrecioVenta());
             stmt.setDouble(3, pt.getStockActual());
@@ -98,7 +98,7 @@ public class ProductoTerminadoDAO {
     public void update(ProductoTerminado pt) {
         String sql = "UPDATE producto_terminado SET nombre = ?, precio_venta = ?, stock_actual = ?, categoria_id = ? WHERE id = ?";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, pt.getNombre());
             stmt.setDouble(2, pt.getPrecioVenta());
             stmt.setDouble(3, pt.getStockActual());
@@ -113,7 +113,7 @@ public class ProductoTerminadoDAO {
     public void updateStock(int id, double nuevoStock) {
         String sql = "UPDATE producto_terminado SET stock_actual = ? WHERE id = ?";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setDouble(1, nuevoStock);
             stmt.setInt(2, id);
             stmt.executeUpdate();
@@ -125,7 +125,7 @@ public class ProductoTerminadoDAO {
     public void delete(int id) {
         String sql = "DELETE FROM producto_terminado WHERE id = ?";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
         } catch (SQLException e) {

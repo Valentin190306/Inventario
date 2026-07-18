@@ -13,7 +13,7 @@ public class RecetaDAO {
     public Receta findByProducto(int productoTerminadoId) {
         String sql = "SELECT id, producto_terminado_id, notas FROM receta WHERE producto_terminado_id = ?";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, productoTerminadoId);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -31,7 +31,7 @@ public class RecetaDAO {
     public Receta findById(int id) {
         String sql = "SELECT id, producto_terminado_id, notas FROM receta WHERE id = ?";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {

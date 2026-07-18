@@ -18,7 +18,8 @@ public class DatabaseManager {
 
     private static DatabaseManager instance;
 
-    private Connection connection;
+    private String dbUrl;
+    private boolean schemaApplied;
 
     private DatabaseManager() {
     }
@@ -38,33 +39,37 @@ public class DatabaseManager {
                 Files.createDirectories(parentDir);
             }
 
-            String url = "jdbc:sqlite:" + dbPath.toAbsolutePath();
-            connection = DriverManager.getConnection(url);
+            dbUrl = "jdbc:sqlite:" + dbPath.toAbsolutePath();
 
-            try (Statement stmt = connection.createStatement()) {
-                stmt.execute("PRAGMA foreign_keys = ON");
+            if (!schemaApplied) {
+                try (Connection conn = openConnection();
+                     Statement stmt = conn.createStatement()) {
+                    stmt.execute("PRAGMA foreign_keys = ON");
+                }
+                executeSchema();
+                schemaApplied = true;
             }
-
-            executeSchema();
         } catch (Exception e) {
             throw new RuntimeException("Error al inicializar la base de datos", e);
         }
     }
 
     public Connection getConnection() {
-        if (connection == null) {
+        if (dbUrl == null) {
             throw new IllegalStateException("Database not initialized. Call initialize() first.");
         }
-        return connection;
+        return openConnection();
     }
 
-    public void close() {
+    private Connection openConnection() {
         try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close();
+            Connection conn = DriverManager.getConnection(dbUrl);
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("PRAGMA foreign_keys = ON");
             }
+            return conn;
         } catch (Exception e) {
-            System.err.println("Error closing database: " + e.getMessage());
+            throw new RuntimeException("Error al abrir conexión a la base de datos", e);
         }
     }
 
@@ -77,8 +82,15 @@ public class DatabaseManager {
             try (var reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
                 sql = reader.lines().collect(Collectors.joining("\n"));
             }
-            try (Statement stmt = connection.createStatement()) {
-                stmt.execute(sql);
+            String[] statements = sql.split(";");
+            try (Connection conn = openConnection();
+                 Statement stmt = conn.createStatement()) {
+                for (String statement : statements) {
+                    String trimmed = statement.trim();
+                    if (!trimmed.isEmpty()) {
+                        stmt.execute(trimmed);
+                    }
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException("Error al ejecutar el schema", e);

@@ -13,8 +13,8 @@ public class CategoriaPTDAO {
         List<CategoriaPT> list = new ArrayList<>();
         String sql = "SELECT id, nombre, categoria_padre_id FROM categoria_pt ORDER BY nombre";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 list.add(mapRow(rs));
             }
@@ -27,7 +27,7 @@ public class CategoriaPTDAO {
     public CategoriaPT findById(int id) {
         String sql = "SELECT id, nombre, categoria_padre_id FROM categoria_pt WHERE id = ?";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -44,7 +44,7 @@ public class CategoriaPTDAO {
         List<CategoriaPT> list = new ArrayList<>();
         String sql = "SELECT id, nombre, categoria_padre_id FROM categoria_pt WHERE categoria_padre_id = ? ORDER BY nombre";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, parentId);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -60,7 +60,7 @@ public class CategoriaPTDAO {
     public int save(CategoriaPT categoria) {
         String sql = "INSERT INTO categoria_pt (nombre, categoria_padre_id) VALUES (?, ?)";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, categoria.getNombre());
             if (categoria.getCategoriaPadreId() != null) {
                 stmt.setInt(2, categoria.getCategoriaPadreId());
@@ -83,7 +83,7 @@ public class CategoriaPTDAO {
     public void update(CategoriaPT categoria) {
         String sql = "UPDATE categoria_pt SET nombre = ?, categoria_padre_id = ? WHERE id = ?";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, categoria.getNombre());
             if (categoria.getCategoriaPadreId() != null) {
                 stmt.setInt(2, categoria.getCategoriaPadreId());
@@ -100,7 +100,7 @@ public class CategoriaPTDAO {
     public void delete(int id) {
         String sql = "DELETE FROM categoria_pt WHERE id = ?";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
         } catch (SQLException e) {

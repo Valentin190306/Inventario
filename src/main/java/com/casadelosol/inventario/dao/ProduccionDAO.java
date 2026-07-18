@@ -17,8 +17,8 @@ public class ProduccionDAO {
         List<Produccion> list = new ArrayList<>();
         String sql = "SELECT id, producto_terminado_id, cantidad, fecha FROM produccion ORDER BY fecha DESC";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 list.add(mapRow(rs));
             }
@@ -31,7 +31,7 @@ public class ProduccionDAO {
     public Produccion findById(int id) {
         String sql = "SELECT id, producto_terminado_id, cantidad, fecha FROM produccion WHERE id = ?";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -48,7 +48,7 @@ public class ProduccionDAO {
         List<Produccion> list = new ArrayList<>();
         String sql = "SELECT id, producto_terminado_id, cantidad, fecha FROM produccion WHERE fecha BETWEEN ? AND ? ORDER BY fecha DESC";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, desde.toString());
             stmt.setString(2, hasta.toString());
             try (ResultSet rs = stmt.executeQuery()) {
@@ -131,6 +131,37 @@ public class ProduccionDAO {
         }
     }
 
+    public List<ResumenProduccion> getResumenPorPeriodo(LocalDate desde, LocalDate hasta) {
+        List<ResumenProduccion> list = new ArrayList<>();
+        String sql = """
+            SELECT p.producto_terminado_id, pt.nombre,
+                   SUM(p.cantidad) as total_cantidad, COUNT(*) as total_producciones
+            FROM produccion p
+            JOIN producto_terminado pt ON p.producto_terminado_id = pt.id
+            WHERE p.fecha BETWEEN ? AND ?
+            GROUP BY p.producto_terminado_id
+            ORDER BY total_cantidad DESC
+            """;
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, desde.toString());
+            stmt.setString(2, hasta.toString());
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new ResumenProduccion(
+                            rs.getInt("producto_terminado_id"),
+                            rs.getString("nombre"),
+                            rs.getDouble("total_cantidad"),
+                            rs.getInt("total_producciones")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al generar resumen de producción", e);
+        }
+        return list;
+    }
+
     public void delete(int id) {
         String sql = "DELETE FROM produccion WHERE id = ?";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
@@ -140,6 +171,9 @@ public class ProduccionDAO {
         } catch (SQLException e) {
             throw new RuntimeException("Error al eliminar producción", e);
         }
+    }
+
+    public record ResumenProduccion(int productoId, String productoNombre, double totalCantidad, int totalProducciones) {
     }
 
     private Produccion mapRow(ResultSet rs) throws SQLException {

@@ -15,8 +15,8 @@ public class CompraDAO {
         List<Compra> list = new ArrayList<>();
         String sql = "SELECT id, materia_prima_id, fecha, cantidad, precio, lugar FROM compra ORDER BY fecha DESC";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 list.add(mapRow(rs));
             }
@@ -29,7 +29,7 @@ public class CompraDAO {
     public Compra findById(int id) {
         String sql = "SELECT id, materia_prima_id, fecha, cantidad, precio, lugar FROM compra WHERE id = ?";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -46,7 +46,7 @@ public class CompraDAO {
         List<Compra> list = new ArrayList<>();
         String sql = "SELECT id, materia_prima_id, fecha, cantidad, precio, lugar FROM compra WHERE materia_prima_id = ? ORDER BY fecha DESC";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, materiaPrimaId);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -63,7 +63,7 @@ public class CompraDAO {
         List<Compra> list = new ArrayList<>();
         String sql = "SELECT id, materia_prima_id, fecha, cantidad, precio, lugar FROM compra WHERE fecha BETWEEN ? AND ? ORDER BY fecha DESC";
         try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, desde.toString());
             stmt.setString(2, hasta.toString());
             try (ResultSet rs = stmt.executeQuery()) {
@@ -126,6 +126,26 @@ public class CompraDAO {
                 }
             }
         }
+    }
+
+    public Double getUltimoPrecioUnitario(int materiaPrimaId) {
+        String sql = "SELECT precio, cantidad FROM compra WHERE materia_prima_id = ? ORDER BY fecha DESC LIMIT 1";
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, materiaPrimaId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    double precio = rs.getDouble("precio");
+                    double cantidad = rs.getDouble("cantidad");
+                    if (cantidad > 0) {
+                        return precio / cantidad;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al obtener último precio de compra", e);
+        }
+        return null;
     }
 
     public void delete(int id) {

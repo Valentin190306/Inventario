@@ -1,9 +1,8 @@
 package com.casadelosol.inventario;
 
+import com.casadelosol.inventario.ui.MainView;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public class App extends Application {
@@ -12,10 +11,10 @@ public class App extends Application {
     public void start(Stage primaryStage) {
         DatabaseManager.getInstance().initialize();
 
-        StackPane root = new StackPane();
-        root.getChildren().add(new Label("Casa Del Sol - Inventario"));
+        MainView mainView = new MainView();
 
-        Scene scene = new Scene(root, 1024, 768);
+        Scene scene = new Scene(mainView, 1200, 800);
+        scene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
 
         primaryStage.setTitle("Inventario - Casa Del Sol");
         primaryStage.setScene(scene);
